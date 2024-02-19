@@ -37,7 +37,6 @@ export default async function ProtectedPage() {
     const text = await arsahubResponse.text()
     if (!arsahubResponse.ok) {
       console.error("Failed to create user in arsahub", arsahubResponse.status, text);
-      return redirect("/");
     }
 
     const {data: newUser, error} = await supabaseAdmin.from('users').insert({
