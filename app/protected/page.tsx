@@ -1,41 +1,107 @@
-import DeployButton from "@/components/DeployButton";
 import AuthButton from "@/components/AuthButton";
-import { createClient } from "@/utils/supabase/server";
-import FetchDataSteps from "@/components/tutorial/FetchDataSteps";
-import Header from "@/components/Header";
-import { redirect } from "next/navigation";
+import {createClient} from "@/utils/supabase/server";
+import {createClient as supabaseCreateClient} from "@supabase/supabase-js";
+import {redirect} from "next/navigation";
+import {Task, TaskItem} from "@/app/protected/task";
+import {ModeToggle} from "@/components/mode-toggle";
+import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
 
 export default async function ProtectedPage() {
   const supabase = createClient();
+  // const supabaseAdmin = createClient(process.env.SUPABASE_SERVICE_KEY!);
+  const supabaseAdmin = supabaseCreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
   const {
-    data: { user },
+    data: {user},
   } = await supabase.auth.getUser();
 
   if (!user) {
     return redirect("/login");
   }
 
+  const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle();
+  if (!linkedUser) {
+    // create arsahub user
+    const arsahubResponse = await fetch(`${ARSAHUB_API_URL}/apps/users`, {
+      method: "POST",
+      headers: {
+        "X-Api-Key": ARSAHUB_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "uniqueId": user.id,
+        "displayName": user.email,
+      }),
+    });
+
+    const text = await arsahubResponse.text()
+    if (!arsahubResponse.ok) {
+      console.error("Failed to create user in arsahub", arsahubResponse.status, text);
+      return redirect("/");
+    }
+
+    const {data: newUser, error} = await supabaseAdmin.from('users').insert({
+      user_id: user.id,
+      arsahub_onboarded_at: new Date(),
+    }).select()
+
+    if (error) {
+      console.error("Failed to create user in supabase", error);
+      return redirect("/");
+    } else {
+      console.log("Created new user", newUser);
+    }
+  }
+
+  const {data: tasks} = await supabase.from('tasks').select();
+
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
       <div className="w-full">
-        <div className="py-6 font-bold bg-purple-950 text-center">
+        <div className="py-6 font-bold bg-primary-foreground text-center">
           This is a protected page that you can only see as an authenticated
           user
         </div>
         <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
           <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-            <DeployButton />
-            <AuthButton />
+            <AuthButton/>
+            <ModeToggle/>
           </div>
         </nav>
       </div>
 
-      <div className="animate-in flex-1 flex flex-col gap-20 opacity-0 max-w-4xl px-3">
-        <Header />
+      <div className="flex gap-4 w-[1000px]">
+        <iframe
+          className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
+          src="http://cp23or1.sit.kmutt.ac.th/embed/apps/1/leaderboard"
+          frameBorder="0"
+        />
+
+        <iframe
+          className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
+          src={`http://cp23or1.sit.kmutt.ac.th/embed/apps/1/users/${user.id}`}
+          frameBorder="0"
+        />
+      </div>
+
+      <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
         <main className="flex-1 flex flex-col gap-6">
-          <h2 className="font-bold text-4xl mb-4">Next steps</h2>
-          <FetchDataSteps />
+          {tasks ? (
+            <div>
+              <h2 className="font-bold text-4xl mb-4">Tasks</h2>
+              <ul>
+                {tasks.map((task: Task) => (
+                  <li key={task.id} className="flex justify-between">
+                    <TaskItem task={task}/>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p>
+              No tasks found
+            </p>
+          )}
         </main>
       </div>
 
