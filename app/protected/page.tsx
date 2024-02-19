@@ -72,13 +72,13 @@ export default async function ProtectedPage() {
       <div className="flex gap-4 w-[1000px]">
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src="http://cp23or1.sit.kmutt.ac.th/embed/apps/1/leaderboard"
+          src="https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/leaderboard"
           frameBorder="0"
         />
 
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`http://cp23or1.sit.kmutt.ac.th/embed/apps/1/users/${user.id}`}
+          src={`https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/users/${user.id}`}
           frameBorder="0"
         />
       </div>
