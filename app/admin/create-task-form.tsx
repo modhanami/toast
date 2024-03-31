@@ -6,8 +6,8 @@ import {Textarea} from "@/components/ui/textarea";
 import {Button} from "@/components/ui/button";
 import {JSX, SVGProps, useEffect, useState} from "react";
 
-import {Task} from "@/app/api/tasks/route";
-import {supabaseClient} from "@/app/clients/supabaseClient";
+import {getTasks} from "@/app/clients/apiClient";
+import {Task} from "@/types";
 
 export function CreateTaskForm() {
   const [title, setTitle] = useState("")
@@ -32,11 +32,6 @@ export function CreateTaskForm() {
     loadTasks()
   }
 
-  async function getTasks() {
-    const {data: tasks} = await supabaseClient.from('tasks').select().returns<Task[]>()
-    console.log("[getTasks] Tasks", tasks)
-    return tasks || []
-  }
 
   function loadTasks() {
     getTasks().then(setTasks)
@@ -120,7 +115,7 @@ export function CreateTaskForm() {
 
 }
 
-function TrashIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
+export function TrashIcon(props: JSX.IntrinsicAttributes & SVGProps<SVGSVGElement>) {
   return (
     <svg
       {...props}

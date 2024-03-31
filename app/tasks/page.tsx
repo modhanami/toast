@@ -1,8 +1,8 @@
-import { createClient } from '@/utils/supabase/server'
+import {createServerClient} from '@/utils/supabase/server'
 
 export default async function Page() {
-  const supabase = createClient()
-  const { data: notes } = await supabase.from('tasks').select()
+  const supabase = createServerClient()
+  const {data: notes} = await supabase.from('tasks').select()
 
   return <pre>{JSON.stringify(notes, null, 2)}</pre>
 }

@@ -1,6 +1,9 @@
+"use server"
 import {NextResponse} from "next/server";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
-import {supabaseServer} from "@/app/clients/supabaseServer";
+import {Task, UserTask} from "@/types";
+import {createClient} from "@supabase/supabase-js";
+import {createServerClient} from "@/utils/supabase/server";
 
 // Complete task
 // POST /api/tasks/{id}/complete
@@ -8,18 +11,29 @@ export async function POST(request: Request,
                            {params}: { params: { taskId: string } }
 ) {
   const taskId = params.taskId;
-
-  // await supabase.from('tasks').update({completed: true}).eq('id', taskId);
-  const task = await supabaseServer.from('tasks').select().eq('id', taskId);
-  console.log("Completed task", task);
+  const supabaseServerClient = createServerClient();
+  const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
   const {
     data: {user},
-  } = await supabaseServer.auth.getUser();
-
+  } = await supabaseServerClient.auth.getUser();
   if (!user) {
     return NextResponse.error();
   }
+
+  const {data: task} = await createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!).from('tasks').select().eq('id', taskId).maybeSingle<Task>();
+  if (!task) {
+    console.log("Task not found", taskId)
+    return NextResponse.error();
+  }
+
+  const {data: userTask, error: userTaskError} = await supabaseAdmin.from('user_tasks').insert(<UserTask>{
+    user_id: user.id,
+    task_id: taskId,
+    completed_at: new Date(),
+  }).select().returns<UserTask>();
+  console.log("User task", userTask)
+  console.log("User task error", userTaskError)
 
   // Send trigger to gamification platform
   const response = await fetch(`${ARSAHUB_API_URL}/apps/trigger`, {
@@ -30,15 +44,15 @@ export async function POST(request: Request,
     },
     body: JSON.stringify({
       "key": "task_completed",
-      "userId": user?.id,
+      "userId": user.id,
       "params": {
-        "task_id": 1
+        "task_id": taskId,
+        "points_earned": task.points,
       }
     }),
   });
 
-// await supabase.from('tasks').update({completed: true}).eq('id', taskId);
   const text = await response.text()
   console.log("Trigger response", response.status, text);
-  return NextResponse.json(task);
+  return NextResponse.json(userTask);
 }

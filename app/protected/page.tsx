@@ -1,26 +1,19 @@
 import AuthButton from "@/components/AuthButton";
 import {redirect} from "next/navigation";
-import {TaskItem} from "@/app/protected/task";
 import {ModeToggle} from "@/components/mode-toggle";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
-
-import {supabaseServer} from "@/app/clients/supabaseServer";
-import {Task} from "@/types";
-import {supabaseAdmin} from "@/app/clients/supabaseAdmin";
-
-export interface ToastUser {
-  id: string;
-  user_id: string;
-  user_role: "admin" | undefined;
-  arsahub_onboarded_at: string;
-}
-
+import {TaskList} from "./task-list";
+import {ToastUser} from "@/types";
+import {createClient} from "@supabase/supabase-js";
+import {createServerClient} from "@/utils/supabase/server";
 
 export default async function ProtectedPage() {
+  const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const supabaseServerClient = createServerClient();
 
   const {
     data: {user},
-  } = await supabaseServer.auth.getUser();
+  } = await supabaseServerClient.auth.getUser();
 
   if (!user) {
     return redirect("/login");
@@ -46,7 +39,10 @@ export default async function ProtectedPage() {
       console.error("Failed to create user in arsahub", arsahubResponse.status, text);
     }
 
-    const {data: newUser, error} = await supabaseAdmin.from('users').insert({
+    const {
+      data: newUser,
+      error
+    } = await supabaseAdmin.from('users').insert({
       user_id: user.id,
       arsahub_onboarded_at: new Date(),
     }).maybeSingle<ToastUser>()
@@ -58,8 +54,6 @@ export default async function ProtectedPage() {
       console.log("Created new user", newUser);
     }
   }
-
-  const {data: tasks} = await supabaseServer.from('tasks').select();
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
@@ -92,22 +86,7 @@ export default async function ProtectedPage() {
 
       <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
         <main className="flex-1 flex flex-col gap-6">
-          {tasks ? (
-            <div>
-              <h2 className="font-bold text-4xl mb-4">Tasks</h2>
-              <ul>
-                {tasks.map((task: Task) => (
-                  <li key={task.id} className="flex justify-between">
-                    <TaskItem task={task}/>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p>
-              No tasks found
-            </p>
-          )}
+          <TaskList/>
         </main>
       </div>
 
