@@ -1,25 +1,32 @@
 import AuthButton from "@/components/AuthButton";
-import {createClient} from "@/utils/supabase/server";
-import {createClient as supabaseCreateClient} from "@supabase/supabase-js";
 import {redirect} from "next/navigation";
-import {Task, TaskItem} from "@/app/protected/task";
+import {TaskItem} from "@/app/protected/task";
 import {ModeToggle} from "@/components/mode-toggle";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
 
+import {supabaseServer} from "@/app/clients/supabaseServer";
+import {Task} from "@/types";
+import {supabaseAdmin} from "@/app/clients/supabaseAdmin";
+
+export interface ToastUser {
+  id: string;
+  user_id: string;
+  user_role: "admin" | undefined;
+  arsahub_onboarded_at: string;
+}
+
+
 export default async function ProtectedPage() {
-  const supabase = createClient();
-  // const supabaseAdmin = createClient(process.env.SUPABASE_SERVICE_KEY!);
-  const supabaseAdmin = supabaseCreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
 
   const {
     data: {user},
-  } = await supabase.auth.getUser();
+  } = await supabaseServer.auth.getUser();
 
   if (!user) {
     return redirect("/login");
   }
 
-  const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle();
+  const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle<ToastUser>()
   if (!linkedUser) {
     // create arsahub user
     const arsahubResponse = await fetch(`${ARSAHUB_API_URL}/apps/users`, {
@@ -42,7 +49,7 @@ export default async function ProtectedPage() {
     const {data: newUser, error} = await supabaseAdmin.from('users').insert({
       user_id: user.id,
       arsahub_onboarded_at: new Date(),
-    }).select()
+    }).maybeSingle<ToastUser>()
 
     if (error) {
       console.error("Failed to create user in supabase", error);
@@ -52,7 +59,7 @@ export default async function ProtectedPage() {
     }
   }
 
-  const {data: tasks} = await supabase.from('tasks').select();
+  const {data: tasks} = await supabaseServer.from('tasks').select();
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
@@ -72,13 +79,13 @@ export default async function ProtectedPage() {
       <div className="flex gap-4 w-[1000px]">
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src="https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/leaderboard"
+          src="http://localhost:3000/embed/apps/43/leaderboard"
           frameBorder="0"
         />
 
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/users/${user.id}`}
+          src={`http://localhost:3000/embed/apps/43/users/${user.id}`}
           frameBorder="0"
         />
       </div>

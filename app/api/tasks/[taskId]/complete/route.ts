@@ -1,6 +1,6 @@
-import {createClient} from "@/utils/supabase/server";
 import {NextResponse} from "next/server";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
+import {supabaseServer} from "@/app/clients/supabaseServer";
 
 // Complete task
 // POST /api/tasks/{id}/complete
@@ -9,14 +9,13 @@ export async function POST(request: Request,
 ) {
   const taskId = params.taskId;
 
-  const supabase = createClient();
   // await supabase.from('tasks').update({completed: true}).eq('id', taskId);
-  const task = await supabase.from('tasks').select().eq('id', taskId);
+  const task = await supabaseServer.from('tasks').select().eq('id', taskId);
   console.log("Completed task", task);
 
   const {
     data: {user},
-  } = await supabase.auth.getUser();
+  } = await supabaseServer.auth.getUser();
 
   if (!user) {
     return NextResponse.error();
