@@ -16,7 +16,8 @@ export default async function handler(
 
   // @ts-ignore
   const io = new Server(res.socket.server, {
-    path: '/api/socket.io'
+    path: '/api/socket.io',
+    addTrailingSlash: false
   });
   res.socket.server.io = io;
 
