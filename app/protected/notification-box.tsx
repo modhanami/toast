@@ -2,11 +2,12 @@
 import Image from 'next/image'
 import {WebhookEvent} from "@/types";
 import {useEffect, useState} from "react";
-import {Socket} from "socket.io-client";
+import {io, Socket} from "socket.io-client";
 import {createClientClient} from "@/utils/supabase/client";
 import {User} from "@supabase/gotrue-js/src/lib/types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import {toast} from "sonner";
 
 dayjs.extend(relativeTime)
 
@@ -24,24 +25,24 @@ export function NotificationBox() {
 
   const supabaseClientClient = createClientClient();
 
-  // useEffect(() => {
-  //   (async () => {
-  //     await fetch("/api/socket");
-  //
-  //     socket = io({
-  //       path: "/api/socket.io",
-  //     });
-  //
-  //     socket?.on("connect", () => {
-  //       console.log("Connected", socket.id);
-  //     });
-  //
-  //   })();
-  //
-  //   return () => {
-  //     socket?.close();
-  //   }
-  // }, []);
+  useEffect(() => {
+    (async () => {
+      await fetch("/api/socket");
+
+      socket = io({
+        path: "/api/socket.io",
+      });
+
+      socket?.on("connect", () => {
+        console.log("Connected", socket.id);
+      });
+
+    })();
+
+    return () => {
+      socket?.close();
+    }
+  }, []);
 
   useEffect(() => {
     supabaseClientClient.auth.getUser().then(({data}) => {
@@ -69,41 +70,41 @@ export function NotificationBox() {
     })()
   }, []);
 
-  // useEffect(() => {
-  //   if (user && socket) {
-  //     socket.emit("join", user.id);
-  //     socket.on("webhookEvent", (newEvent: WebhookEvent) => {
-  //       console.log("Webhook event", newEvent);
-  //       setEvents(events => {
-  //         const webhookIds = new Set(events.map(event => event.webhook_id));
-  //         console.log("Webhook IDs", webhookIds)
-  //         console.log("Event webhook ID", newEvent.webhook_id)
-  //
-  //         if (!("event" in newEvent.raw)) {
-  //           console.log("Invalid event", newEvent)
-  //           if (newEvent.raw.event === "points_updated") {
-  //             toast.success(`You earned ${newEvent.raw.payload.pointsChange} points!`);
-  //           }
-  //           if (newEvent.raw.event === "achievement_unlocked") {
-  //             const achievement = newEvent.raw.payload.achievement;
-  //             toast.success(`You unlocked the achievement: ${achievement.title}`);
-  //           }
-  //         }
-  //
-  //
-  //         if (!webhookIds.has(newEvent.webhook_id)) {
-  //           const latestTenEvents = [...events, newEvent]
-  //             .sort((a, b) => {
-  //               return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  //             })
-  //             .slice(0, 10);
-  //           return latestTenEvents;
-  //         }
-  //         return events;
-  //       })
-  //     });
-  //   }
-  // }, [user, socket]);
+  useEffect(() => {
+    if (user && socket) {
+      socket.emit("join", user.id);
+      socket.on("webhookEvent", (newEvent: WebhookEvent) => {
+        console.log("Webhook event", newEvent);
+        setEvents(events => {
+          const webhookIds = new Set(events.map(event => event.webhook_id));
+          console.log("Webhook IDs", webhookIds)
+          console.log("Event webhook ID", newEvent.webhook_id)
+
+          if (!("event" in newEvent.raw)) {
+            console.log("Invalid event", newEvent)
+            if (newEvent.raw.event === "points_updated") {
+              toast.success(`You earned ${newEvent.raw.payload.pointsChange} points!`);
+            }
+            if (newEvent.raw.event === "achievement_unlocked") {
+              const achievement = newEvent.raw.payload.achievement;
+              toast.success(`You unlocked the achievement: ${achievement.title}`);
+            }
+          }
+
+
+          if (!webhookIds.has(newEvent.webhook_id)) {
+            const latestTenEvents = [...events, newEvent]
+              .sort((a, b) => {
+                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+              })
+              .slice(0, 10);
+            return latestTenEvents;
+          }
+          return events;
+        })
+      });
+    }
+  }, [user, socket]);
 
   console.log("Events", events)
   // const descendingEvents = events.sort((a, b) => {
