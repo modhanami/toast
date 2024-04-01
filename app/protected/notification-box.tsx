@@ -12,7 +12,7 @@ import {toast} from "sonner";
 dayjs.extend(relativeTime)
 
 let socket: Socket;
-export const IMAGE_BASE_URL = process.env.NEXT_PUBLIC_IMAGE_BASE_URL;
+export const IMAGE_BASE_URL = "https://ash-dev.modhanami.com";
 
 export function getImageUrlFromKey(key: string) {
   const url = new URL(key, IMAGE_BASE_URL);
