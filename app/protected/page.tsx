@@ -1,25 +1,26 @@
 import AuthButton from "@/components/AuthButton";
-import {createClient} from "@/utils/supabase/server";
-import {createClient as supabaseCreateClient} from "@supabase/supabase-js";
 import {redirect} from "next/navigation";
-import {Task, TaskItem} from "@/app/protected/task";
 import {ModeToggle} from "@/components/mode-toggle";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
+import {TaskList} from "./task-list";
+import {ToastUser} from "@/types";
+import {createClient} from "@supabase/supabase-js";
+import {createServerClient} from "@/utils/supabase/server";
+import {NotificationBox} from "@/app/protected/notification-box";
 
 export default async function ProtectedPage() {
-  const supabase = createClient();
-  // const supabaseAdmin = createClient(process.env.SUPABASE_SERVICE_KEY!);
-  const supabaseAdmin = supabaseCreateClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const supabaseServerClient = createServerClient();
 
   const {
     data: {user},
-  } = await supabase.auth.getUser();
+  } = await supabaseServerClient.auth.getUser();
 
   if (!user) {
     return redirect("/login");
   }
 
-  const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle();
+  const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle<ToastUser>()
   if (!linkedUser) {
     // create arsahub user
     const arsahubResponse = await fetch(`${ARSAHUB_API_URL}/apps/users`, {
@@ -39,10 +40,13 @@ export default async function ProtectedPage() {
       console.error("Failed to create user in arsahub", arsahubResponse.status, text);
     }
 
-    const {data: newUser, error} = await supabaseAdmin.from('users').insert({
+    const {
+      data: newUser,
+      error
+    } = await supabaseAdmin.from('users').insert({
       user_id: user.id,
       arsahub_onboarded_at: new Date(),
-    }).select()
+    }).maybeSingle<ToastUser>()
 
     if (error) {
       console.error("Failed to create user in supabase", error);
@@ -51,8 +55,6 @@ export default async function ProtectedPage() {
       console.log("Created new user", newUser);
     }
   }
-
-  const {data: tasks} = await supabase.from('tasks').select();
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
@@ -69,38 +71,25 @@ export default async function ProtectedPage() {
         </nav>
       </div>
 
+      <NotificationBox/>
+
       <div className="flex gap-4 w-[1000px]">
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src="https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/leaderboard"
+          src={`http://localhost:3000/embed/apps/${process.env.ARSAHUB_APP_ID}/leaderboard`}
           frameBorder="0"
         />
 
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`https://capstone23.sit.kmutt.ac.th/or1/embed/apps/1/users/${user.id}`}
+          src={`http://localhost:3000/embed/apps/${process.env.ARSAHUB_APP_ID}/users/${user.id}`}
           frameBorder="0"
         />
       </div>
 
       <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
         <main className="flex-1 flex flex-col gap-6">
-          {tasks ? (
-            <div>
-              <h2 className="font-bold text-4xl mb-4">Tasks</h2>
-              <ul>
-                {tasks.map((task: Task) => (
-                  <li key={task.id} className="flex justify-between">
-                    <TaskItem task={task}/>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : (
-            <p>
-              No tasks found
-            </p>
-          )}
+          <TaskList/>
         </main>
       </div>
 

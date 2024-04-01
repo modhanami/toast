@@ -1,11 +1,7 @@
 "use client";
 
 import {toast} from "sonner";
-
-export interface Task {
-  id: number;
-  title: string;
-}
+import {Task} from "@/types";
 
 export function TaskItem({task}: { task: Task }) {
   async function onTaskComplete() {

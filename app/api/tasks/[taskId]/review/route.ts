@@ -1,18 +1,19 @@
 "use server"
 import {NextResponse} from "next/server";
 import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
-import {Task, UserTask} from "@/types";
+import {ReviewRequest, Task, UserTask} from "@/types";
 import {createClient} from "@supabase/supabase-js";
 import {createServerClient} from "@/utils/supabase/server";
 
 // Complete task
-// POST /api/tasks/{id}/complete
+// POST /api/tasks/{id}/review
 export async function POST(request: Request,
                            {params}: { params: { taskId: string } }
 ) {
   const taskId = params.taskId;
   const supabaseServerClient = createServerClient();
   const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
+  const review = await request.json() as ReviewRequest;
 
   const {
     data: {user},
@@ -27,11 +28,10 @@ export async function POST(request: Request,
     return NextResponse.error();
   }
 
-  const {data: userTask, error: userTaskError} = await supabaseAdmin.from('user_tasks').insert(<UserTask>{
-    user_id: user.id,
-    task_id: taskId,
-    completed_at: new Date(),
-  }).select().returns<UserTask>();
+  const {data: userTask, error: userTaskError} = await supabaseAdmin.from('user_tasks').update({
+    review: review.review,
+    reviewed_at: new Date(),
+  }).eq('task_id', taskId).eq('user_id', user.id).select().returns<UserTask>();
   console.log("User task", userTask)
   console.log("User task error", userTaskError)
 
@@ -43,11 +43,12 @@ export async function POST(request: Request,
       "Content-Type": "application/json"
     },
     body: JSON.stringify({
-      "key": "task_completed",
+      "key": "task_reviewed",
       "userId": user.id,
       "params": {
         "task_id": Number(taskId),
-        "points_earned": task.points,
+        "review": review.review,
+        "points_earned": task.review_points,
       }
     }),
   });

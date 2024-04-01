@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { headers } from "next/headers";
-import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
-import { SubmitButton } from "./submit-button";
+import {headers} from "next/headers";
+import {createServerClient} from "@/utils/supabase/server";
+import {redirect} from "next/navigation";
+import {SubmitButton} from "./submit-button";
 
 export default function Login({
-  searchParams,
-}: {
+                                searchParams,
+                              }: {
   searchParams: { message: string };
 }) {
   const signIn = async (formData: FormData) => {
@@ -14,9 +14,9 @@ export default function Login({
 
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const supabase = createClient();
+    const supabase = createServerClient();
 
-    const { error } = await supabase.auth.signInWithPassword({
+    const {error} = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -34,9 +34,9 @@ export default function Login({
     const origin = headers().get("origin");
     const email = formData.get("email") as string;
     const password = formData.get("password") as string;
-    const supabase = createClient();
+    const supabase = createServerClient();
 
-    const { error } = await supabase.auth.signUp({
+    const {error} = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -69,8 +69,9 @@ export default function Login({
           strokeLinejoin="round"
           className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1"
         >
-          <polyline points="15 18 9 12 15 6" />
-        </svg>{" "}
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        {" "}
         Back
       </Link>
 
