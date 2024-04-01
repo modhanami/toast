@@ -6,7 +6,9 @@ export interface Task {
   title: string;
   description: string;
   points: number;
-  created_at: string;
+  created_at?: string;
+  review_keywords?: string[];
+  review_points?: number;
 }
 
 export interface UserTask {
@@ -36,4 +38,8 @@ export interface ExtendedNextApiResponse extends NextApiResponse {
       io?: Server;
     };
   };
+}
+
+export interface ReviewRequest {
+  review: string;
 }

@@ -14,14 +14,34 @@ export function CreateTaskForm() {
   const [description, setDescription] = useState("")
   const [points, setPoints] = useState(0)
   const [tasks, setTasks] = useState<Task[]>([])
+  const [reviewKeywords, setReviewKeywords] = useState<string>("")
+  const [reviewPoints, setReviewPoints] = useState(0)
+  const [withReview, setWithReview] = useState(false)
 
   async function createTask() {
+    if (withReview) {
+      if (!reviewKeywords) {
+        alert("Please enter review keywords")
+        return
+      }
+      if (!reviewPoints) {
+        alert("Please enter review points")
+        return
+      }
+    }
     // call the API to create the task
-    console.log("Creating task", {title, description, points})
+    const processedReviewKeywords = processReviewKeywords(reviewKeywords);
+    const payload: Task = {
+      title,
+      description, points,
+      review_keywords: withReview ? processedReviewKeywords : undefined,
+      review_points: withReview ? reviewPoints : undefined
+    };
+    console.log("Creating task", payload)
 
     const response = await fetch("/api/tasks", {
       method: "POST",
-      body: JSON.stringify({title, description, points}),
+      body: JSON.stringify(payload),
       headers: {
         "Content-Type": "application/json"
       }
@@ -35,6 +55,13 @@ export function CreateTaskForm() {
 
   function loadTasks() {
     getTasks().then(setTasks)
+  }
+
+  function processReviewKeywords(reviewKeywords: string): string[] {
+    return reviewKeywords.split(",")
+      .map(keyword => keyword.trim())
+      .filter(Boolean)
+
   }
 
   useEffect(loadTasks, [])
@@ -62,6 +89,37 @@ export function CreateTaskForm() {
         <Input id="points" placeholder="Enter the points" type="number" required value={points}
                onChange={(e) => setPoints(Number(e.target.value))}/>
       </div>
+
+      <div className="gap-2 flex items-center">
+        <input id="withReview" type="checkbox" checked={withReview} onChange={(e) => setWithReview(e.target.checked)}/>
+        <Label className="text-sm" htmlFor="withReview">
+          With Review
+        </Label>
+      </div>
+
+      {withReview && (
+        <>
+          <div className="grid gap-2">
+            <Label className="text-sm" htmlFor="reviewKeywords">
+              Review Keywords
+            </Label>
+            <Textarea id="reviewKeywords" placeholder="Enter the comma-separated review keywords" value={reviewKeywords}
+                      onChange={(e) => setReviewKeywords(e.target.value)}
+                      onBlur={(e) => {
+                        setReviewKeywords(processReviewKeywords(e.target.value).join(","))
+                      }}/>
+          </div>
+          <div className="grid gap-2">
+            <Label className="text-sm" htmlFor="reviewPoints">
+              Points for review
+            </Label>
+            <Input id="reviewPoints" placeholder="Enter the points for a review" type="number" required
+                   value={reviewPoints}
+                   onChange={(e) => setReviewPoints(Number(e.target.value))}/>
+          </div>
+        </>
+      )}
+
       <Button className="w-[150px]"
               onClick={createTask}>Add task</Button>
 
