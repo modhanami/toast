@@ -1,7 +1,7 @@
 import AuthButton from "@/components/AuthButton";
 import {redirect} from "next/navigation";
 import {ModeToggle} from "@/components/mode-toggle";
-import {ARSAHUB_API_KEY, ARSAHUB_API_URL, ARSAHUB_URL} from "@/lib/arsahub";
+import {ARSAHUB_API_KEY, ARSAHUB_API_URL} from "@/lib/arsahub";
 import {TaskList} from "./task-list";
 import {ToastUser} from "@/types";
 import {createClient} from "@supabase/supabase-js";
@@ -76,13 +76,13 @@ export default async function ProtectedPage() {
       <div className="flex gap-4 w-[1000px]">
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`${ARSAHUB_URL}/embed/apps/${process.env.ARSAHUB_APP_ID}/leaderboard`}
+          src={`https://capstone23.sit.kmutt.ac.th/or1/embed/apps/${process.env.ARSAHUB_APP_ID}/leaderboard`}
           frameBorder="0"
         />
 
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`${ARSAHUB_URL}/embed/apps/${process.env.ARSAHUB_APP_ID}/users/${user.id}`}
+          src={`https://capstone23.sit.kmutt.ac.th/or1/embed/apps/${process.env.ARSAHUB_APP_ID}/users/${user.id}`}
           frameBorder="0"
         />
       </div>
