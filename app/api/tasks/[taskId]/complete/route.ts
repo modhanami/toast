@@ -46,7 +46,7 @@ export async function POST(request: Request,
       "key": "task_completed",
       "userId": user.id,
       "params": {
-        "task_id": taskId,
+        "task_id": Number(taskId),
         "points_earned": task.points,
       }
     }),

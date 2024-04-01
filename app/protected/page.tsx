@@ -6,6 +6,7 @@ import {TaskList} from "./task-list";
 import {ToastUser} from "@/types";
 import {createClient} from "@supabase/supabase-js";
 import {createServerClient} from "@/utils/supabase/server";
+import {NotificationBox} from "@/app/protected/notification-box";
 
 export default async function ProtectedPage() {
   const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_KEY!);
@@ -70,16 +71,18 @@ export default async function ProtectedPage() {
         </nav>
       </div>
 
+      <NotificationBox/>
+
       <div className="flex gap-4 w-[1000px]">
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src="http://localhost:3000/embed/apps/43/leaderboard"
+          src={`http://localhost:3000/embed/apps/${process.env.ARSAHUB_APP_ID}/leaderboard`}
           frameBorder="0"
         />
 
         <iframe
           className="w-1/2 h-96 border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
-          src={`http://localhost:3000/embed/apps/43/users/${user.id}`}
+          src={`http://localhost:3000/embed/apps/${process.env.ARSAHUB_APP_ID}/users/${user.id}`}
           frameBorder="0"
         />
       </div>
