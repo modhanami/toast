@@ -90,6 +90,7 @@ export function TaskList() {
         const completed = completedTaskIds.has(task.id!);
         const disabled = completed
         const canReview = Boolean(task.review_points) && completed
+        const keywordsText = task.review_keywords?.join(", ") || ""
         return (
           <div key={task.id} className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
             <div className={cn("grid gap-1", {
@@ -149,6 +150,19 @@ export function TaskList() {
               </Button>
 
             </div>
+
+            {/*Review Call to action*/}
+
+            <p
+              className={cn("text-sm text-gray-500 dark:text-gray-400", {})}
+            >
+              Review the task to earn extra <span
+              className="font-semibold"
+            >{task.review_points}</span> points<br/>by including the following
+              keywords: <span
+              className="font-semibold"
+            >{keywordsText}</span>
+            </p>
           </div>
         );
       })}

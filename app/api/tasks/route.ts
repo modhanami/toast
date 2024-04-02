@@ -37,7 +37,10 @@ export async function POST(request: Request,
     created_at: new Date(),
   }).select().returns<Task[]>();
 
-  const newTask = newTasks?.[0];
+  // get the one with latest id
+  const newTask = newTasks
+    // @ts-ignore
+    ?.sort((a, b) => a.id! - b.id!).pop();
   if (error || !newTask) {
     console.error("Failed to create task", error);
     return NextResponse.error();

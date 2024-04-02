@@ -40,6 +40,23 @@ export default async function ProtectedPage() {
       console.error("Failed to create user in arsahub", arsahubResponse.status, text);
     }
 
+    // send trigger user_registered
+    const response = await fetch(`${ARSAHUB_API_URL}/apps/trigger`, {
+      method: "POST",
+      headers: {
+        "X-Api-Key": ARSAHUB_API_KEY,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        "key": "user_registered",
+        "userId": user.id,
+        "params": {}
+      }),
+    });
+
+    const triggerRegisteredResponse = await response.text()
+    console.log("triggerRegisteredResponse", response.status, triggerRegisteredResponse);
+
     const {
       data: newUser,
       error
