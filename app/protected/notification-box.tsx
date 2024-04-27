@@ -1,6 +1,4 @@
 "use client"
-import Image from 'next/image'
-import {WebhookEvent} from "@/types";
 import {useEffect, useState} from "react";
 import {io, Socket} from "socket.io-client";
 import {createClientClient} from "@/utils/supabase/client";
@@ -8,6 +6,7 @@ import {User} from "@supabase/gotrue-js/src/lib/types";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
 import {toast} from "sonner";
+import {AppUserPointsHistoryResponse} from "@/app";
 
 dayjs.extend(relativeTime)
 
@@ -20,7 +19,7 @@ export function getImageUrlFromKey(key: string) {
 }
 
 export function NotificationBox() {
-    const [events, setEvents] = useState<WebhookEvent[]>([]);
+    const [pointsHistory, setPointsHistory] = useState<AppUserPointsHistoryResponse[]>([]);
     const [user, setUser] = useState<User | null>(null);
 
     const supabaseClientClient = createClientClient();
@@ -54,109 +53,74 @@ export function NotificationBox() {
             }
         });
 
-        // init events history
-        (async () => {
-            console.log("Fetching events")
-            const {
-                data: events,
-                error
-            } = await supabaseClientClient.from("webhook_events").select().order("created_at", {ascending: false}).limit(10).returns<WebhookEvent[]>();
-            if (error) {
-                console.error("Failed to fetch events", error);
-            } else {
-                console.log("Fetched events", events)
-                setEvents(events);
+        // init pointsHistory history
+        getPointsHistory().then((pointsHistory) => {
+            if (pointsHistory) {
+                setPointsHistory(pointsHistory);
             }
-        })()
+        })
     }, []);
 
-    useEffect(() => {
-        if (user && socket) {
-            socket.emit("join", user.id);
-            socket.on("webhookEvent", (newEvent: WebhookEvent) => {
-                console.log("Webhook event", newEvent);
-                setEvents(events => {
-                    const webhookIds = new Set(events.map(event => event.webhook_id));
-                    console.log("Webhook IDs", webhookIds)
-                    console.log("Event webhook ID", newEvent.webhook_id)
-
-                    if (!("event" in newEvent.raw)) {
-                        console.log("Invalid event", newEvent)
-                        if (newEvent.raw.event === "points_updated") {
-                            toast.success(`You earned ${newEvent.raw.payload.pointsChange} points!`);
-                        }
-                        if (newEvent.raw.event === "achievement_unlocked") {
-                            const achievement = newEvent.raw.payload.achievement;
-                            toast.success(`You unlocked the achievement: ${achievement.title}`);
-                        }
-                    }
-
-
-                    if (!webhookIds.has(newEvent.webhook_id)) {
-                        const latestTenEvents = [...events, newEvent]
-                            .sort((a, b) => {
-                                return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-                            })
-                            .slice(0, 10);
-                        return latestTenEvents;
-                    }
-                    return events;
-                })
-            });
+    async function getPointsHistory(): Promise<AppUserPointsHistoryResponse[] | undefined> {
+        const response = await fetch("/api/me/points/history");
+        const json = await response.json();
+        console.log("Points history", json);
+        if (!response.ok) {
+            toast.error("Failed to fetch points history");
+            return undefined;
         }
-    }, [user, socket]);
+        return json.slice(0, 10);
+    }
 
-    console.log("Events", events)
-    // const descendingEvents = events.sort((a, b) => {
-    //   return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-    // })
-    const descendingEvents = events
+    console.log("Events", pointsHistory)
+
+    // refresh with interval of 2 seconds
+    useEffect(() => {
+        const interval = setInterval(() => {
+            getPointsHistory().then((pointsHistory) => {
+                if (pointsHistory) {
+                    setPointsHistory(pointsHistory);
+                }
+            })
+        }, 2000);
+
+        return () => {
+            clearInterval(interval);
+        }
+    }, []);
 
     return (
         <div>
             <h1 className="text-lg font-medium">10 Latest Notifications</h1>
             <ul>
-                {descendingEvents.map((event, index) => {
-                    if (!("event" in event.raw)) {
-                        console.log("Invalid event", event)
-                        return null;
-                    }
+                {pointsHistory.map((event, index) => {
+                    const timeAgo = datetimeFormatter.format(new Date(event.createdAt))
 
-                    const timeAgo = dayjs(event.created_at).fromNow();
+                    return (
+                        <li key={index} className="flex flex-col items-center mb-4">
 
-                    if (event.raw.event === "points_updated") {
-                        return (
-                            <li key={index} className="flex items-center gap-4 p-1">
-                <span
-                    className="text-sm text-muted-foreground">{timeAgo}</span>
-                                <p>You earned {event.raw.payload.pointsChange} points!</p>
-                            </li>
-                        )
-                    }
-
-                    if (event.raw.event === "achievement_unlocked") {
-                        const achievement = event.raw.payload.achievement;
-                        return (
-                            <li key={index} className="flex items-center gap-4 p-1">
-                        <span
-                            className="text-sm text-muted-foreground">{timeAgo}</span>
-                                <p>You unlocked the achievement: {achievement.title}</p>
-                                <Image
-                                    src={getImageUrlFromKey(achievement.imageKey)}
-                                    alt={achievement.title!.toString()}
-                                    width={50}
-                                    height={50}
-                                />
-                            </li>
-                        )
-                    }
-
-                    return null;
+                            <div className="flex flex-col gap-1 text-sm">
+                                <p>You earned {event.pointsChange} points!</p> <span
+                                className="text-muted-foreground text-xs">on {timeAgo}</span>
+                                <p className="text-muted-foreground text-xs">from '{event.fromRule?.title}'
+                                    (ID: {event.fromRule?.id})</p>
+                            </div>
+                        </li>
+                    )
                 })}
-                {descendingEvents.length === 0 && (
+                {pointsHistory.length === 0 && (
                     <li className="text-muted-foreground">No notifications</li>
                 )}
             </ul>
         </div>
     )
 }
+
+const datetimeFormatter = new Intl.DateTimeFormat("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
+});
