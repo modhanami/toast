@@ -115,7 +115,7 @@ export function NotificationBox() {
     )
 }
 
-const datetimeFormatter = new Intl.DateTimeFormat("en-US", {
+export const datetimeFormatter = new Intl.DateTimeFormat("en-US", {
     year: "numeric",
     month: "long",
     day: "numeric",

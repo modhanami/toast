@@ -9,6 +9,7 @@ import {JSX, SVGProps, useEffect, useState} from "react";
 import {getTasks} from "@/app/clients/apiClient";
 import {Task} from "@/types";
 import {toast} from "sonner";
+import {datetimeFormatter} from "@/app/protected/notification-box";
 
 export function CreateTaskForm() {
     const [title, setTitle] = useState("")
@@ -76,7 +77,7 @@ export function CreateTaskForm() {
     useEffect(loadTasks, [])
 
     return (
-        <div className="flex flex-col max-w-xl gap-4 pt-16">
+        <div className="flex flex-col min-w-[600px] max-w-xl gap-4 pt-16">
             <div className="grid gap-2">
                 <Label className="text-sm" htmlFor="title">
                     Title
@@ -136,45 +137,14 @@ export function CreateTaskForm() {
                     onClick={createTask}>Add task</Button>
 
             <div className="border rounded-lg divide-y">
-                <div className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
-                    <div className="grid gap-1">
-                        <h2 className="font-semibold text-base">Wireframe the app</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Create a basic wireframe for the app
-                            layout</p>
-                    </div>
-                    <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline">
-                        <TrashIcon className="w-4 h-4"/>
-                        <span className="sr-only">Delete</span>
-                    </Button>
-                </div>
-                <div className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
-                    <div className="grid gap-1">
-                        <h2 className="font-semibold text-base">Implement the sidebar</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Add the sidebar with navigation
-                            links</p>
-                    </div>
-                    <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline">
-                        <TrashIcon className="w-4 h-4"/>
-                        <span className="sr-only">Delete</span>
-                    </Button>
-                </div>
-                <div className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
-                    <div className="grid gap-1">
-                        <h2 className="font-semibold text-base">Write the documentation</h2>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">Create user documentation for the
-                            app</p>
-                    </div>
-                    <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline">
-                        <TrashIcon className="w-4 h-4"/>
-                        <span className="sr-only">Delete</span>
-                    </Button>
-                </div>
                 {tasks.map(task => (
                     <div key={task.id} className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
                         <div className="grid gap-1">
-                            <h2 className="font-semibold text-base">{task.title}</h2>
+                            <h2 className="font-semibold">{task.id}. {task.title}</h2>
                             <p className="text-sm text-gray-500 dark:text-gray-400">{task.description}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{task.points || 0} points</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400"><span
+                                className="text-lg font-medium text-amber-300">{task.points || 0}</span> points</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">{datetimeFormatter.format(new Date(task.created_at!))}</p>
                         </div>
                         <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline">
                             <TrashIcon className="w-4 h-4"/>

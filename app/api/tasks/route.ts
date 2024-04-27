@@ -43,7 +43,7 @@ export async function POST(request: Request,
         ?.sort((a, b) => a.id! - b.id!).pop();
     if (error || !newTask) {
         console.error("Failed to create task", error);
-        return NextResponse.json({error: "Failed to create task"}, {status: 500});
+        return NextResponse.json({error}, {status: 500});
     } else {
         console.log("Created new task", newTask);
     }
