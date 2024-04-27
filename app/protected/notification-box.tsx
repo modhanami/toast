@@ -91,21 +91,20 @@ export function NotificationBox() {
 
     return (
         <div>
-            <h1 className="text-lg font-medium">10 Latest Notifications</h1>
+            <h1 className="text-lg font-medium mb-4">10 Latest Notifications</h1>
             <ul>
                 {pointsHistory.map((event, index) => {
                     const timeAgo = datetimeFormatter.format(new Date(event.createdAt))
 
                     return (
-                        <li key={index} className="flex flex-col items-center mb-4">
-
+                        <div key={index} className="flex flex-col items-start mb-4">
                             <div className="flex flex-col gap-1 text-sm">
-                                <p>You earned {event.pointsChange} points!</p> <span
+                                <p className="text-emerald-300">You earned {event.pointsChange} points!</p> <span
                                 className="text-muted-foreground text-xs">on {timeAgo}</span>
                                 <p className="text-muted-foreground text-xs">from '{event.fromRule?.title}'
                                     (ID: {event.fromRule?.id})</p>
                             </div>
-                        </li>
+                        </div>
                     )
                 })}
                 {pointsHistory.length === 0 && (

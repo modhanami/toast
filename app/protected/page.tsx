@@ -111,7 +111,9 @@ export default async function ProtectedPage() {
                         <p className="text-muted-foreground">
                             You earn points by completing tasks. The more tasks you complete, the more points you earn.
                             <br/>
-                            Some tasks also allow you to earn extra points by sharing your review.
+                            Some tasks also allow you to earn extra points by sharing your review <span
+                            className="text-yellow-300">(all keywords must be
+                            included.)</span>
                         </p>
                         <TaskList/>
                     </main>

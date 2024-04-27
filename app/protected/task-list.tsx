@@ -9,6 +9,7 @@ import {toast} from "sonner";
 import {NotebookPenIcon} from "lucide-react";
 import {Dialog, DialogContent, DialogHeader, DialogTrigger} from "@/components/ui/dialog";
 import {CardTitle} from "@/components/ui/card";
+import {Separator} from "@/components/ui/separator";
 
 export function TaskList() {
     const [tasks, setTasks] = useState<Task[]>([])
@@ -27,6 +28,14 @@ export function TaskList() {
 
     useEffect(loadTasks, []);
     useEffect(loadUserTasks, []);
+
+    const taskToUserTaskMap = useMemo(() => {
+        const map = new Map<string, UserTask>()
+        userTasks.forEach(userTask => {
+            map.set(userTask.task_id, userTask)
+        })
+        return map
+    }, [userTasks])
 
     async function completeTask(task: Task) {
         setIsSaving(true)
@@ -74,7 +83,7 @@ export function TaskList() {
 
         if (response.ok) {
             console.log("Task reviewed", task)
-            toast.success(`Task reviewed: ${task.title}! You earned ${task.review_points} points.`)
+            toast.success(`Task reviewed: ${task.title}!`)
         } else {
             const text = await response.text();
             console.error("Failed to review task", task, response.statusText, text)
@@ -97,81 +106,115 @@ export function TaskList() {
                 const canReview = Boolean(task.review_points) && completed
                 const keywordsText = task.review_keywords?.join(", ") || ""
                 return (
-                    <div key={task.id} className="grid grid-cols-[2fr_1fr] items-center p-4 gap-4">
-                        <div className={cn("grid gap-1", {
-                            "line-through text-foreground/50": disabled
-                        })}>
-                            <h2 className={cn(
-                                "text-base", {
-                                    "font-semibold": !disabled
-                                }
-                            )}>
+                    <>
+                        <div key={task.id} className="flex p-4 gap-8">
+
+                            <div className="flex flex-col gap-2">
+                                <div className={cn("flex flex-col gap-1", {
+                                    "line-through opacity-30": disabled
+                                })}>
+                                    <h2 className={cn(
+                                        "text-base", {
+                                            "font-semibold": !disabled
+                                        }
+                                    )}>
                 <span
                     className={cn("text-sm", {
                         "font-semibold": !disabled
                     })}>{task.id}. &nbsp;</span>
-                                {task.title}</h2>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{task.description}</p>
-                            <p className="text-sm text-gray-500 dark:text-gray-400">{task.points || 0} points</p>
-                        </div>
-                        <div className="flex gap-2 items-center">
-                            {/* Can review fore extra points */}
-                            {task.review_points && (
-                                <Dialog>
-                                    <DialogTrigger disabled={isSaving || !canReview}>
-                                        <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline"
-                                                disabled={isSaving || !canReview}
-                                        >
-                                            <NotebookPenIcon className="w-4 h-4"/>
-                                            <span className="sr-only">Review</span>
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <CardTitle>Review task {task.id}. {task.title}</CardTitle>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">Review the task to
-                                                earn extra points</p>
-                                            <textarea
-                                                value={currentReview}
-                                                onChange={e => setCurrentReview(e.target.value)}
-                                                className="w-full h-32 p-2 border border-gray-200 rounded-lg"
-                                            />
-                                            <Button
-                                                onClick={() => reviewTask(task, currentReview)}
-                                                disabled={isSaving || !canReview}
-                                            >
-                                                Review
-                                            </Button>
-                                        </DialogHeader>
-                                    </DialogContent>
-                                </Dialog>
+                                        {task.title}</h2>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400">{task.description}</p>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400"><span
+                                        className="font-medium text-lg text-amber-300">{task.points || 0}</span> points
+                                    </p>
+                                </div>
+
+                                {/*Review Call to action*/}
+
+                                <p
+                                    className={cn("text-sm text-gray-500 dark:text-gray-400", {})}
+                                >
+                                    Review the task to earn extra <span
+                                    className="font-medium text-md text-pink-300">{task.review_points || 0}</span> points<br/>
+                                    Required keywords: <span
+                                    className="font-medium text-md text-emerald-300">{keywordsText}</span>
+                                </p>
+                            </div>
+
+                            <div className="flex flex-col gap-2 ml-8">
+                                <div className="flex gap-2 items-center">
+                                    {/* Can review fore extra points */}
+                                    {task.review_points && (
+                                        <Dialog>
+                                            <DialogTrigger disabled={isSaving || !canReview}>
+                                                <Button className="flex px-4 py-2 gap-2" variant="outline"
+                                                        disabled={isSaving || !canReview}
+                                                >
+                                                    <NotebookPenIcon className="w-4 h-4"/>
+                                                    <div className="">Review</div>
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent>
+                                                <DialogHeader>
+                                                    <CardTitle>Review task {task.id}. {task.title}</CardTitle>
+                                                    <p className="text-sm text-gray-500 dark:text-gray-400">Review the
+                                                        task
+                                                        to
+                                                        earn extra points</p>
+                                                    <textarea
+                                                        value={currentReview}
+                                                        onChange={e => setCurrentReview(e.target.value)}
+                                                        className="w-full h-32 p-2 border border-gray-200 rounded-lg"
+                                                    />
+                                                    <Button
+                                                        onClick={() => reviewTask(task, currentReview)}
+                                                        disabled={isSaving || !canReview}
+                                                    >
+                                                        Review
+                                                    </Button>
+                                                </DialogHeader>
+                                            </DialogContent>
+                                        </Dialog>
+                                    )}
+
+                                    <Button className="flex px-4 py-2 gap-2"
+                                            onClick={() => completeTask(task)}
+                                            disabled={disabled || isSaving}
+                                    >
+                                        <CheckIcon className="w-4 h-4"/>
+                                        <div className="">Complete</div>
+                                    </Button>
+
+                                </div>
+
+                            </div>
+
+
+                            {/*    Your review for this task */}
+                            {taskToUserTaskMap.has(task.id!) && taskToUserTaskMap.get(task.id!)?.review && (
+                                <div className="flex flex-col gap-1">
+                                    <h3 className="font-semibold text-sm">Your review</h3>
+                                    <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                                        {taskToUserTaskMap.get(task.id!)?.review}
+                                    </p>
+                                    <p className="text-sm">Result:</p> {reviewContainsAllKeywords(taskToUserTaskMap.get(task.id!)?.review || "", task.review_keywords || [])
+                                    ? <p className="text-sm text-emerald-300">You earned {task.review_points} extra
+                                        points!</p>
+                                    : <p className="text-sm text-red-300">You did not earn the extra points</p>}
+                                </div>
                             )}
 
-                            <Button className="w-8 h-8 rounded-full ml-auto" size="icon" variant="outline"
-                                    onClick={() => completeTask(task)}
-                                    disabled={disabled || isSaving}
-                            >
-                                <CheckIcon className="w-4 h-4"/>
-                                <span className="sr-only">Complete</span>
-                            </Button>
 
                         </div>
 
-                        {/*Review Call to action*/}
-
-                        <p
-                            className={cn("text-sm text-gray-500 dark:text-gray-400", {})}
-                        >
-                            Review the task to earn extra <span
-                            className="font-semibold"
-                        >{task.review_points}</span> points<br/>by including the following
-                            keywords: <span
-                            className="font-semibold"
-                        >{keywordsText}</span>
-                        </p>
-                    </div>
+                        <Separator/>
+                    </>
                 );
             })}
         </div>
     )
+}
+
+function reviewContainsAllKeywords(review: string, keywords: string[]) {
+    return keywords.every(keyword => review.includes(keyword))
 }
