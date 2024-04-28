@@ -40,8 +40,6 @@ export default async function ProtectedPage() {
         const text = await arsahubResponse.text()
         if (!arsahubResponse.ok) {
             console.error("Failed to create user in arsahub", arsahubResponse.status, text);
-            return;
-            // toast.error(`Failed to create user in arsahub: ${arsahubResponse.statusText}: ${text}`)
         }
 
         const {
@@ -110,10 +108,11 @@ export default async function ProtectedPage() {
             <div className="flex gap-12 w-full p-4">
                 <div className="flex flex-col gap-8 items-end">
 
+                    {/*<iframe style="border-radius:12px" src="https://open.spotify.com/embed/track/5rVK0USOsYxLirUWQ0DsIf?utm_source=generator&theme=0" width="100%" height="352" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>*/}
                     <iframe
                         className="h-[600px] w-[400px] border-2 border-primary-foreground rounded-lg overflow-hidden shadow-lg"
                         src={`${ARSAHUB_URL}/embed/apps/${process.env.ARSAHUB_APP_ID}/users/${user.id}`}
-                        frameBorder="0"
+                        // frameBorder="0"
                     />
 
                     <iframe
