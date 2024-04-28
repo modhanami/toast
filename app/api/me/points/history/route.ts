@@ -37,7 +37,7 @@ export async function GET(request: Request) {
     });
 
     const json = (await response.json()) as AppUserPointsHistoryResponse[];
-    console.log("Trigger response", response.status, json);
+    // console.log("History response", response.status, json);
     if (!response.ok) {
         return NextResponse.json({error: json}, {status: response.status});
     }

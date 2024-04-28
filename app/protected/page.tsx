@@ -23,39 +23,26 @@ export default async function ProtectedPage() {
     const {data: linkedUser} = await supabaseAdmin.from('users').select().eq('user_id', user.id).maybeSingle<ToastUser>()
     if (!linkedUser) {
         // create arsahub user
+        const value = {
+            "uniqueId": user.id,
+            "displayName": user.email,
+        };
+        console.log("Creating user in arsahub", user.id, user.email, "value", value)
         const arsahubResponse = await fetch(`${ARSAHUB_API_URL}/apps/users`, {
             method: "POST",
             headers: {
                 "X-Api-Key": ARSAHUB_API_KEY,
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({
-                "uniqueId": user.id,
-                "displayName": user.email,
-            }),
+            body: JSON.stringify(value),
         });
 
         const text = await arsahubResponse.text()
         if (!arsahubResponse.ok) {
             console.error("Failed to create user in arsahub", arsahubResponse.status, text);
+            return;
+            // toast.error(`Failed to create user in arsahub: ${arsahubResponse.statusText}: ${text}`)
         }
-
-        // send trigger user_registered
-        const response = await fetch(`${ARSAHUB_API_URL}/apps/trigger`, {
-            method: "POST",
-            headers: {
-                "X-Api-Key": ARSAHUB_API_KEY,
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                "key": "user_registered",
-                "userId": user.id,
-                "params": {}
-            }),
-        });
-
-        const triggerRegisteredResponse = await response.text()
-        console.log("triggerRegisteredResponse", response.status, triggerRegisteredResponse);
 
         const {
             data: newUser,
@@ -67,10 +54,42 @@ export default async function ProtectedPage() {
 
         if (error) {
             console.error("Failed to create user in supabase", error);
+            // toast.error(`Failed to create user in supabase: ${error}`)
+            // remove arsahub user
+            const deleteResponse = await fetch(`${ARSAHUB_API_URL}/apps/users/${user.id}`, {
+                method: "DELETE",
+                headers: {
+                    "X-Api-Key": ARSAHUB_API_KEY,
+                },
+            });
+            if (!deleteResponse.ok) {
+                const deleteText = await deleteResponse.text()
+                console.error("Failed to delete user in arsahub", deleteResponse.status, deleteText);
+                // toast.error(`Failed to delete user in arsahub: ${deleteResponse.statusText}: ${deleteText}`)
+            }
+
             return redirect("/");
         } else {
             console.log("Created new user", newUser);
+            // send trigger user_registered
+            const response = await fetch(`${ARSAHUB_API_URL}/apps/trigger`, {
+                method: "POST",
+                headers: {
+                    "X-Api-Key": ARSAHUB_API_KEY,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    "key": "user_registered",
+                    "userId": user.id,
+                    "params": {}
+                }),
+            });
+
+            const triggerRegisteredResponse = await response.text()
+            console.log("Trigger user_registered response", response.status, triggerRegisteredResponse);
         }
+    } else {
+        console.log("User already exists", linkedUser);
     }
 
     return (
